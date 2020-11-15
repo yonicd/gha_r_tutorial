@@ -36,13 +36,13 @@ jobs:
       - name: Build
         run: rmarkdown::render('slides.Rmd', 'xaringan::moon_reader',output_file = 'index.html')
         shell: Rscript {0}
-    - name: Commit changes
-      uses: EndBug/add-and-commit@v5
-      with:
-        author_name: GitHub Actions
-        author_email: actions@github.com
-        message: "update slides"
-        add: "."
-        branch: pages
-      env:
-        GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+      - name: Commit changes
+        uses: EndBug/add-and-commit@v5
+        with:
+          author_name: GitHub Actions
+          author_email: actions@github.com
+          message: "update slides"
+          add: "."
+          branch: pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
