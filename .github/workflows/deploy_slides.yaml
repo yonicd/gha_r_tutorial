@@ -22,6 +22,7 @@ jobs:
           install.packages(c('remotes','rmarkdown'))
           remotes::install_github('yihui/xaringan')
           remotes::install_github('gadenbuie/xaringanExtra')
+          remotes::install_github('gadenbuie/xaringanthemer')
         shell: Rscript {0}
       - name: Build
         run: rmarkdown::render('slides.Rmd', 'xaringan::moon_reader',output_file = 'index.html')
