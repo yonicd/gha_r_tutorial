@@ -1,0 +1,586 @@
+---
+title: "GitHub Actions"
+author: 
+  - "Jonathan Sidi"
+date: '`r Sys.Date()`'
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    css: resources/css/xaringan-themer.css
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+```
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringanthemer)
+style_duo_accent(
+  primary_color = "#1381B0",
+  secondary_color = "#FF961C",
+  inverse_header_color = "#FFFFFF"
+)
+```
+
+```{r xaringan-panelset, echo=FALSE}
+xaringanExtra::use_panelset()
+```
+
+# What are GitHub Actions?
+
+- Integrated GitHub CI/CD
+  - Same idea as Travis, Appveyor, Jenkins, Drone, ...
+  
+- Build, test, and deploy your code right from GitHub. 
+
+- Make code reviews, branch management, and issue triaging work the way you want.
+
+---
+
+# Where do GitHub Actions Live?
+
+```yml
+.
+├── .Rbuildignore
+├── .Rproj.user
+├── .git
+├── .github
+│   └── workflows
+│       └── R-CMD-check.yaml
+├── .gitignore
+├── DESCRIPTION
+├── LICENSE
+├── NAMESPACE
+├── R
+├── README.md
+├── _pkgdown.yml
+├── codecov.yml
+├── gha_r_tutorial.Rproj
+├── inst
+├── man
+├── tests
+└── vignettes
+```
+
+---
+
+# Intializing .github
+
+- Manually
+
+```r
+dir.create('.github/workflows',recursive = TRUE)
+file.create('.github/workflows/R-CMD-check.yaml')
+```
+
+- {usethis}
+
+```r
+usethis::use_github_actions()
+✓ Setting active project to '/Users/yonis/projects/gha_r_tutorial'
+✓ Creating '.github/'
+✓ Adding '^\\.github$' to '.Rbuildignore'
+✓ Adding '*.html' to '.github/.gitignore'
+✓ Creating '.github/workflows/'
+✓ Writing '.github/workflows/R-CMD-check.yaml'
+```
+---
+
+# Basic Structure of the yaml
+
+.panelset[
+.panel[.panel-name[On]
+
+Workflows can be triggered when code is pushed to any branch in a repository
+
+```yml
+on: push
+```
+
+This is an example of an workflow triggered on push or pull request events
+
+```yml
+on: [push, pull_request]
+```
+
+This is a more realistic example that a workflow is triggered only on push or pull events on the master or main branches.
+
+```yml
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+```
+
+]
+.panel[.panel-name[Name]
+This is as it seems, the name of the workflow that will be used a label in the IDE
+
+```yml
+name: R-CMD-check
+```
+
+]
+.panel[.panel-name[Job]
+These are the commands you want the machine to run
+
+```yml
+jobs:
+  R-CMD-check:
+    runs-on: macOS-latest #machine to run on
+    steps:
+      - uses: actions/checkout@v2 # external resource (GitHub Repo)
+      - uses: r-lib/actions/setup-r@v1 # external resource
+      - name: Install dependencies # name of the step
+        run: | # What to run (R code to install packages)
+          install.packages(c("remotes", "rcmdcheck"))
+          remotes::install_deps(dependencies = TRUE)
+        # This tells the machine to run the lines with RScript
+        shell: Rscript {0}
+      - name: Check # Run R CMD check
+        run: |
+          rcmdcheck::rcmdcheck(args = "--no-manual",error_on = "error")
+        shell: Rscript {0}
+```
+]
+]
+
+---
+
+### Putting It All Together
+
+```yml
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+name: R-CMD-check
+
+jobs:
+  R-CMD-check:
+    runs-on: macOS-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: r-lib/actions/setup-r@v1
+      - name: Install dependencies
+        run: |
+          install.packages(c("remotes", "rcmdcheck"))
+          remotes::install_deps(dependencies = TRUE)
+        shell: Rscript {0}
+      - name: Check
+        run: |
+          rcmdcheck::rcmdcheck(args = "--no-manual", error_on = "error")
+        shell: Rscript {0}
+
+```
+
+---
+
+# Strategies
+
+Constructing a strategy will allow to run multiple workflows from the same configuration file.
+
+This lets you replace hardcoded values with values from an array.
+
+```yml
+jobs:
+  R-CMD-check:
+    strategy:
+# fail-fast: When set to true, GitHub cancels all in-progress jobs 
+# if any matrix job fails. Default: true
+      fail-fast: false
+      matrix:
+        config:
+          - {os: windows-latest, r: 'release'}
+          - {os: macOS-latest,   r: 'release'}
+          - {os: ubuntu-20.04,   r: 'release'}
+          - {os: ubuntu-20.04,   r: 'devel'}
+          
+    runs-on: ${{ matrix.config.os }}
+
+    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+
+```
+
+---
+
+# Environment Variables
+.panelset[
+.panel[.panel-name[Github]
+It is strongly recommend that actions use environment variables to access the filesystem rather than using hardcoded file paths. GitHub sets environment variables for actions to use in all runner environments.
+
+To find a full list of them go to [here](https://docs.github.com/en/free-pro-team@latest/actions/reference/environment-variables#default-environment-variables).
+
+The main rule of thumb is that they are prefixed by `GITHUB_*`, and any user generated environment variables cannot have the same prefix.
+]
+.panel[.panel-name[User Defined]
+User defined environment variables that the workflow has access to is done via the GitHub repository secrets.
+
+![](resources/img/secrets.png)
+]
+.panel[.panel-name[Usage]
+```yml
+jobs:
+    strategy:
+      matrix:
+        config:
+        - {os: ubuntu-20.04, r: 'release', rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"}
+    env:
+      R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
+      RSPM: ${{ matrix.config.rspm }}
+      SLACK_API_TOKEN: ${{ secrets.SLACK_API_TOKEN }}
+      SLACK_SKIPLOAD: ${{ secrets.SLACK_SKIPLOAD }}
+ # This is a workaround for {remotes} defaults      
+      GITHUB_PAT: ${{ secrets.GH_PAT }}
+```
+]
+]
+
+---
+# Commit Message Interaction
+
+It is possible to interact with the action based on the commit message
+
+Here we can tell the workflow to skip (like [skip travis]) when the message contains 'skip winos'.
+
+This can be helpful when there are multiple workflow being triggered on the same action, and you want to control which platform should actually be run. 
+
+```yml
+on: [push, pull_request]
+
+jobs:
+  check:
+    runs-on: ${{ matrix.config.os }}
+    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+    if: "!contains(github.event.head_commit.message, 'skip winos')"
+```
+
+---
+
+# Common Workflows
+
+Here is a list of [common R workflows](https://github.com/r-lib/actions/tree/master/examples#standard-ci-workflow) curated by Jim Hester and RStudio
+
+- [CRAN submission](https://github.com/r-lib/actions/tree/master/examples#standard-ci-workflow)
+- [Test coverage](https://github.com/r-lib/actions/tree/master/examples#test-coverage-workflow)
+- [Render Readme](https://github.com/r-lib/actions/tree/master/examples#render-readme)
+- [Deploy pkgdown](https://github.com/r-lib/actions/tree/master/examples#build-pkgdown-site)
+- [Build Bookdown](https://github.com/r-lib/actions/tree/master/examples#build-bookdown-site)
+- [Build Blogdown](https://github.com/r-lib/actions/tree/master/examples#build-blogdown-site)
+
+---
+
+# Tricky Tasks
+.panelset[
+.panel[.panel-name[magick]
+.pull-left[
+linux
+```yml
+jobs:
+ steps:
+  - name: Install magick libs
+    run: |
+      sudo apt-get -qq update
+      sudo apt-get -y install libmagick++-dev
+      sudo ldconfig /usr/local/lib
+```
+]
+
+.pull-right[
+osx
+```yml
+jobs:
+ steps:
+  - name: Install XQuartz on macOS
+    if: runner.os == 'macOS'
+    run: brew cask install xquartz 
+  - name: Install magick
+    run: brew install imagemagick
+```
+]
+]
+.panel[.panel-name[tinytex]
+.pull-left[
+linux
+```yml
+jobs:
+ steps:
+ - name: Install texlibs
+        run: |
+          sudo apt-get -qq update
+          sudo apt-get install -y texlive-base texlive-latex-base texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra
+          tlmgr install standalone xcolor booktabs multirow amsmath listings setspace caption graphics tools psnfss varwidth colortbl epstopdf-pkg pgf
+
+```
+]
+.pull-right[
+winOS
+```yml
+jobs:
+ steps:
+  - name: install tinytex
+    run: |
+      install.packages('tinytex')
+      tinytex::install_tinytex()
+      tinytex::tlmgr_install(c('standalone', 'xcolor', 'booktabs', 'multirow', 'amsmath', 'listings', 'setspace', 'caption', 'graphics', 'tools', 'psnfss', 'varwidth', 'colortbl', 'epstopdf-pkg', 'pgf'))
+      cat("::add-path::", tinytex::tinytex_root(), "\\bin\\win32", sep = "")
+    shell: Rscript {0}
+  - run: tlmgr --version
+  - run: pdflatex --version
+```
+]
+]
+.panel[.panel-name[Interacting Via API]
+```yml
+jobs:
+ steps:
+  - name: Update commit status
+    if: env.fork == 'false' # only run on non-fork repos
+    run: | # post an api call to github with json data using data from build
+      curl --request POST \
+      --url https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.event.pull_request.head.sha }} \
+      --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+      --header 'Accept: application/vnd.github.antiope-preview+json' \
+      --header 'content-type: application/json' \
+      --data '{
+        "state": "success",
+        "target_url": "${{ env.DEPLOY_URL }}",
+        "context": "Netlify"
+        }'
+```
+]
+.panel[.panel-name[covrpage]
+```yml
+- name: covrpage
+        if: github.ref == 'refs/heads/master'
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          Rscript -e 'remotes::install_github("hadley/emo")' \
+                  -e 'remotes::install_github("yonicd/covrpage@actions")' \
+                  -e 'covrpage::covrpage_ci()'
+          git commit tests/README.md -m 'Update tests/README.Rmd' || echo "No changes to commit"
+          git push https://${{github.actor}}:${{secrets.GITHUB_TOKEN}}@github.com/${{github.repository}}.git HEAD:${{ github.ref }} || echo "No changes to commit"
+```
+]
+]
+
+---
+# Weak Points
+
+GitHub actions do have a few weak points that you should know that is different from other CI/CD systems.
+
+- Invoking a workflow only via commit (can't via GUI)
+- Cron jobs only work on main branch
+- You can't blow away your cache (bump the version of the restore-keys) 
+
+```yml
+jobs:
+  R-CMD-check:
+    - name: Cache R packages
+        if: runner.os != 'Windows'
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.R_LIBS_USER }}
+          key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-${{ hashFiles('.github/depends.Rds') }}
+          restore-keys: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-
+```
+
+
+---
+# Leveling Up
+
+### GitHub Marketplace
+
+The GitHub actions marketplace is where fellow GHA users post their self contained tasks that can be reused by any user (think CRAN but for GHA)
+
+Here is the link to it: https://github.com/marketplace?type=actions
+
+We will touch on a few useful ones I have used
+
+  - [Debugging with tmate](https://github.com/marketplace/actions/debugging-with-tmate): This GitHub Action offers you a direct way to interact with the host system on which the actual scripts (Actions) will run.
+   - SSH into an active workflow for advanced debugging
+
+  - [Repository Dispatch](https://github.com/marketplace/actions/repository-dispatch): A GitHub action to create a repository dispatch event. 
+   - A repository dispatch event lets you create your own events to trigger builds in other repositories.
+
+---
+
+# Debugging with tmate
+.pull-left[
+```yml
+name: CI
+on: [push]
+jobs:
+  check:
+    runs-on: macOS-latest
+    if: "!contains(github.event.head_commit.message, 'gha ssh')"
+  build:
+    runs-on: macOS-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v2
+```
+]
+
+.pull-right[
+![](https://github.com/mxschmitt/action-tmate/raw/master/docs/checks-tab.png)
+]
+
+---
+# Repository Dispatch
+
+Using Repository Dispatch we can start to connect GitHub Repository action workflows
+.pull-left[
+[Parent Workflow](https://github.com/yonicd/slackteams/blob/master/.github/workflows/R-mac.yml#L75)
+
+```yml
+jobs:
+  steps:
+    - name: slackthreads trigger
+        uses: peter-evans/repository-dispatch@v1.0.0
+        with:
+          token: ${{secrets.GH_PAT}}
+          repository: yonicd/slackthreads
+          event-type: push
+          client-payload: '{"repository": "${{ github.repository }}", "ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
+
+```
+]
+
+.pull-right[
+[Child Workflow](https://github.com/yonicd/slackthreads/blob/master/.github/workflows/R-mac-revdep.yml)
+
+```yml
+name: Repository Dispatch
+
+on:
+  repository_dispatch:
+    types: [push]
+```
+]
+
+---
+# Clapping Back
+
+If the child workflow fails it will use the information it got from the parent to open an issue referencing the offending github commit hash.
+
+```yml
+jobs:
+  steps:
+    - name: Clap Back
+        if: failure()
+        run: |
+          curl --request POST \
+          --url https://api.github.com/repos/${{github.repository}}/issues \
+          --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+          --header 'Accept: application/vnd.github.antiope-preview+json' \
+          --header 'content-type: application/json' \
+          --data '{
+            "title": "Revdep Fail: ${{ github.repository }}",
+            "body": "The Reverse Dependency ${{ github.repository }} of ${{ github.event.client_payload.repository }} has broken due to the commit ${{ github.event.client_payload.sha }}",
+            "label" : ["revdep breaking"]
+            }'
+```
+
+---
+# Revdep Workflow
+
+Combining Repository Dispatch with Clapping Back you can create a Revdep workflow. For an example workflow you can see in [yonicd/slackteams](https://github.com/yonicd/slackteams/blob/master/.github/workflows/R-mac-revdep.yml).
+
+Adding a line to install the hash for the parent repository before all the other package dependencies are installed will test the package against the current dependency build and the other CRAN installations.
+
+If it fails then clapback is invoked to let the developer know something is wrong.
+
+```yml
+jobs:
+  check:
+    - name: Run Check
+        run: |
+            Rscript -e "install.packages('remotes')" \
+                    -e "remotes::install_github('${{ github.event.client_payload.repository }}@${{ github.event.client_payload.sha }}', force = TRUE)" \
+                    -e  "remotes::install_deps(dependencies = TRUE)" \
+                    -e "remotes::install_cran('rcmdcheck')" \
+                    -e "rcmdcheck::rcmdcheck(args = '${{ matrix.config.args }}', error_on = 'warning', check_dir = 'check')"
+```
+
+---
+# Slackverse
+
+The packages in slackverse are all connected in a CI/CD network where if one of them fails a then it will trigger warnings across the whole network of packages.
+
+||||
+|:----:|:----:|:----:|
+|| slackcalls<br>[![](https://github.com/yonicd/slackcalls/workflows/R-mac/badge.svg)](https://github.com/yonicd/slackcalls) ||
+| slackthreads<br>[![](https://github.com/yonicd/slackthreads/workflows/R-mac/badge.svg)](https://github.com/yonicd/slackthreads) |slackteams<br>[![](https://github.com/yonicd/slackteams/workflows/R-mac/badge.svg)](https://github.com/yonicd/slackteams) |  slackposts<br>[![](https://github.com/yonicd/slackposts/workflows/R-mac/badge.svg)](https://github.com/yonicd/slackposts)|
+||| slackblocks<br>[![](https://github.com/yonicd/slackblocks/workflows/R-mac/badge.svg)](https://github.com/yonicd/slackblocks) |
+||| slackreprex<br>[![](https://github.com/yonicd/slackreprex/workflows/R-mac/badge.svg)](https://github.com/yonicd/slackreprex) |
+
+---
+
+# Development: {Shield}
+
+.panelset[
+.panel[.panel-name[Goal]
+The goal of [shield](https://github.com/yonicd/shield) is to create a simple workflow to install package first level dependencies exclusively from github remote repositories when available.
+
+- {shield} will query the DESCRIPTION file and locate all the remote locations of the package dependencies.
+- This is meant to be used in a CI/CD where in the workflow the remote dependencies are found and installed instead of the current CRAN install.
+- This can create a much earlier warning system than CRAN checks that let you know if there is trouble ahead based on development repos of your dependencies and react accordingly.
+- This is similar to the idea of [synk](https://snyk.io/) for npm packages.
+]
+.panel[.panel-name[Workflow]
+.center[<img src="resources/img/shield.png" width="400" height = "400">]
+]
+.panel[.panel-name[Usage]
+```r
+Package: shield
+Type: Package
+Title: Full Remote Installation
+Version: 0.0.1
+Depends: R (>= 3.6.0)
+Imports: httr,base64enc,desc,remotes,utils,stats
+Suggests: knitr,rmarkdown
+```
+
+```r
+create_map('DESCRIPTION')
+#>             package                                      sha    type
+#> 1        r-lib/httr 844c8c75e25eaf1e385810b6ede4aa56b70493f8 remotes
+#> 3        r-lib/desc 61205f60616a90d2a9fba8241c81870ac27f3d5c remotes
+#> 4     r-lib/remotes 8d8d545cb6a1725bd943522cb953c5c2755c2cf4 remotes
+#> 5       yihui/knitr ab191b07223a609e7c4ba53d664d35ebfc9dcb97 remotes
+#> 6 rstudio/rmarkdown 18ba267c6a0b9789c680a5b6135db910dd937e47 remotes
+#> 2         base64enc                                     <NA>    cran
+```
+
+]
+.panel[.panel-name[GHA]
+
+```yml
+jobs:
+  check:
+    - name: Install dependencies
+      run: |
+        install.packages('remotes')
+        remotes::install_github('yonicd/shield')
+        shield::install_remotes(shield::create_map())
+        remotes::install_local(force = TRUE, upgrade = TRUE)
+        remotes::install_cran('rcmdcheck')
+      shell: Rscript {0}
+```
+]
+
+.panel[.panel-name[Visualization]
+Respository Dispatch status are invoked only after the parent repository passes a successful master branch build.
+
+.center[<img src="resources/img/shield_vis.png" width="400" height = "300">]
+]]
