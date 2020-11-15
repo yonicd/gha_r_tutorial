@@ -13,17 +13,26 @@ name: deploy-slides
 jobs:
   deploy-slides:
     runs-on: macOS-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GH_PAT }}
     steps:
       - uses: actions/checkout@v2
       - uses: r-lib/actions/setup-r@v1
       - uses: r-lib/actions/setup-pandoc@v1      
       - name: Install dependencies
         run: |
-          install.packages(c('remotes','rmarkdown'))
+          install.packages(c('remotes','rmarkdown','showtext'))
           remotes::install_github('yihui/xaringan')
           remotes::install_github('gadenbuie/xaringanExtra')
           remotes::install_github('gadenbuie/xaringanthemer')
         shell: Rscript {0}
+      - name: Cache R packages
+        if: runner.os != 'Windows'
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.R_LIBS_USER }}
+          key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-${{ hashFiles('.github/depends.Rds') }}
+          restore-keys: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-        
       - name: Build
         run: rmarkdown::render('slides.Rmd', 'xaringan::moon_reader',output_file = 'index.html')
         shell: Rscript {0}
