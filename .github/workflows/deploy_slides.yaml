@@ -40,9 +40,11 @@ jobs:
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git fetch origin pages
-          git branch
-          git remote -v
-          git add -A .
+          git remote update
+          git fetch --all
+          git stash
+          git checkout -b pages
+          git stash pop
+          git add .
           git commit -m 'Update slides' || echo "No changes to commit"
-          git push --force origin pages || echo "No changes to commit"
+          git push --set-upstream origin pages || echo "No changes to commit"
