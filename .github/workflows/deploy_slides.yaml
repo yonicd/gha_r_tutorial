@@ -21,7 +21,7 @@ jobs:
       - uses: r-lib/actions/setup-pandoc@v1      
       - name: Install dependencies
         run: |
-          install.packages(c('remotes','rmarkdown','showtext'))
+          install.packages(c('remotes','rmarkdown','showtext','fs'))
           remotes::install_github('yihui/xaringan')
           remotes::install_github('gadenbuie/xaringanExtra')
           remotes::install_github('gadenbuie/xaringanthemer')
@@ -36,12 +36,16 @@ jobs:
       - name: Build
         run: rmarkdown::render('slides.Rmd', 'xaringan::moon_reader',output_file = 'index.html')
         shell: Rscript {0}
-      - uses: EndBug/add-and-commit@v5
+      - name: Commit files
+        run: |
+          Rscript -e "fs::dir_tree()"
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m "Build Slides" -a        
+      - name: Push changes
+        uses: ad-m/github-push-action@master
         with:
-          message: "Update slides"
-          add: ". --force"
-          branch: pages
-          author_name: github-actions
-          author_email: github-actions@github.com
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}        
+          github_token: ${{ secrets.GH_PAT }}
+          branch: pages 
+          force: true        
