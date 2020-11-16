@@ -30,6 +30,21 @@ style_duo_accent(
 xaringanExtra::use_panelset()
 ```
 
+```{css, echo=FALSE}
+pre {
+  background: #FFBB33;
+  max-width: 100%;
+  max-height: 500px;
+  overflow-x: auto;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  white-space: -moz-pre-wrap;
+  white-space: -pre-wrap;
+  white-space: -o-pre-wrap;
+  word-wrap: break-word;
+}
+```
+
 # What are GitHub Actions?
 
 - Integrated GitHub CI/CD
