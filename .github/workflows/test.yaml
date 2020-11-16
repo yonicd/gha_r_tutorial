@@ -13,7 +13,7 @@ jobs:
       - uses: EndBug/add-and-commit@v5
         with:
           message: "Add the very useful text file"
-          add: "*.txt --force"
+          add: ". --force"
           branch: pages
           author_name: github-actions
           author_email: github-actions@github.com
