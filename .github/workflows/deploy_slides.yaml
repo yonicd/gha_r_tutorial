@@ -42,6 +42,6 @@ jobs:
           git config user.email github-actions@github.com
           git remote set-branches origin pages
           git fetch origin pages
-          git add .
+          git add -A .
           git commit -m 'Update slides' || echo "No changes to commit"
           git push origin pages || echo "No changes to commit"
