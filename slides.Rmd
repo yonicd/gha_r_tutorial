@@ -223,7 +223,7 @@ The main rule of thumb is that they are prefixed by `GITHUB_*`, and any user gen
 .panel[.panel-name[User Defined]
 User defined environment variables that the workflow has access to is done via the GitHub repository secrets.
 
-![](resources/img/secrets.png)
+![](resources/imgs/secrets.png)
 ]
 .panel[.panel-name[Usage]
 ```yml
@@ -538,7 +538,7 @@ The goal of [shield](https://github.com/yonicd/shield) is to create a simple wor
 - This is similar to the idea of [synk](https://snyk.io/) for npm packages.
 ]
 .panel[.panel-name[Workflow]
-.center[<img src="resources/img/shield.png" width="400" height = "400">]
+.center[<img src="resources/imgs/shield.png" width="400" height = "400">]
 ]
 .panel[.panel-name[Usage]
 ```r
@@ -582,7 +582,7 @@ jobs:
 .panel[.panel-name[Visualization]
 Respository Dispatch status are invoked only after the parent repository passes a successful master branch build.
 
-.center[<img src="resources/img/shield_vis.png" width="400" height = "300">]
+.center[<img src="resources/imgs/shield_vis.png" width="400" height = "300">]
 ]]
 
 ---
