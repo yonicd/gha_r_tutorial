@@ -32,17 +32,16 @@ jobs:
         with:
           path: ${{ env.R_LIBS_USER }}
           key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-${{ hashFiles('.github/depends.Rds') }}
-          restore-keys: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-        
+          restore-keys: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-
       - name: Build
         run: rmarkdown::render('slides.Rmd', 'xaringan::moon_reader',output_file = 'index.html')
         shell: Rscript {0}
-      - name: Commit changes
-        uses: EndBug/add-and-commit@v5
-        with:
-          author_name: GitHub Actions
-          author_email: actions@github.com
-          message: "update slides"
-          add: "."
-          branch: pages
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+      - name: Deploy
+        - run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git remote set-branches origin pages
+          git fetch origin pages
+          git add .
+          git commit -m 'Update slides' || echo "No changes to commit"
+          git push origin pages || echo "No changes to commit"
