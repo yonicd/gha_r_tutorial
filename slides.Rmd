@@ -584,3 +584,9 @@ Respository Dispatch status are invoked only after the parent repository passes 
 
 .center[<img src="resources/img/shield_vis.png" width="400" height = "300">]
 ]]
+
+---
+
+class: center, middle
+
+# Thank you!
