@@ -1,0 +1,7 @@
+jobs:
+ steps:
+  - name: Install magick libs
+    run: |
+      sudo apt-get -qq update
+      sudo apt-get -y install libmagick++-dev
+      sudo ldconfig /usr/local/lib

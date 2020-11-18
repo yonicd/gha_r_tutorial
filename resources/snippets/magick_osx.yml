@@ -1,0 +1,7 @@
+jobs:
+ steps:
+  - name: Install XQuartz on macOS
+    if: runner.os == 'macOS'
+    run: brew cask install xquartz 
+  - name: Install magick
+    run: brew install imagemagick

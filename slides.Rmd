@@ -30,6 +30,12 @@ style_duo_accent(
 xaringanExtra::use_panelset()
 ```
 
+```{r,echo=FALSE}
+print_yml <- function(path){
+  knitr::asis_output(sprintf("```yml\n%s\n```",paste0(readLines(path),collapse = '\n')))
+}
+```
+
 ```{css, echo=FALSE}
 pre {
   background: #FFBB33;
@@ -144,24 +150,10 @@ name: R-CMD-check
 .panel[.panel-name[Job]
 These are the commands you want the machine to run
 
-```yml
-jobs:
-  R-CMD-check:
-    runs-on: macOS-latest #machine to run on
-    steps:
-      - uses: actions/checkout@v2 # external resource (GitHub Repo)
-      - uses: r-lib/actions/setup-r@v1 # external resource
-      - name: Install dependencies # name of the step
-        run: | # What to run (R code to install packages)
-          install.packages(c("remotes", "rcmdcheck"))
-          remotes::install_deps(dependencies = TRUE)
-        # This tells the machine to run the lines with RScript
-        shell: Rscript {0}
-      - name: Check # Run R CMD check
-        run: |
-          rcmdcheck::rcmdcheck(args = "--no-manual",error_on = "error")
-        shell: Rscript {0}
+```{r,echo = FALSE}
+print_yml('resources/snippets/r-cmd-check-job.yml')
 ```
+
 ]
 ]
 
@@ -169,31 +161,8 @@ jobs:
 
 ### Putting It All Together
 
-```yml
-on:
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
-
-name: R-CMD-check
-
-jobs:
-  R-CMD-check:
-    runs-on: macOS-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: r-lib/actions/setup-r@v1
-      - name: Install dependencies
-        run: |
-          install.packages(c("remotes", "rcmdcheck"))
-          remotes::install_deps(dependencies = TRUE)
-        shell: Rscript {0}
-      - name: Check
-        run: |
-          rcmdcheck::rcmdcheck(args = "--no-manual", error_on = "error")
-        shell: Rscript {0}
-
+```{r,echo=FALSE}
+print_yml('resources/snippets/r-cmd-check.yml')
 ```
 
 ---
@@ -204,24 +173,8 @@ Constructing a strategy will allow to run multiple workflows from the same confi
 
 This lets you replace hardcoded values with values from an array.
 
-```yml
-jobs:
-  R-CMD-check:
-    strategy:
-# fail-fast: When set to true, GitHub cancels all in-progress jobs 
-# if any matrix job fails. Default: true
-      fail-fast: false
-      matrix:
-        config:
-          - {os: windows-latest, r: 'release'}
-          - {os: macOS-latest,   r: 'release'}
-          - {os: ubuntu-20.04,   r: 'release'}
-          - {os: ubuntu-20.04,   r: 'devel'}
-          
-    runs-on: ${{ matrix.config.os }}
-
-    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
-
+```{r,results='asis',echo = FALSE}
+print_yml('resources/snippets/matrix.yml')
 ```
 
 ---
@@ -241,20 +194,10 @@ User defined environment variables that the workflow has access to is done via t
 ![](resources/imgs/secrets.png)
 ]
 .panel[.panel-name[Usage]
-```yml
-jobs:
-    strategy:
-      matrix:
-        config:
-        - {os: ubuntu-20.04, r: 'release', rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"}
-    env:
-      R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
-      RSPM: ${{ matrix.config.rspm }}
-      SLACK_API_TOKEN: ${{ secrets.SLACK_API_TOKEN }}
-      SLACK_SKIPLOAD: ${{ secrets.SLACK_SKIPLOAD }}
- # This is a workaround for {remotes} defaults      
-      GITHUB_PAT: ${{ secrets.GH_PAT }}
+```{r,echo=FALSE}
+print_yml('resources/snippets/environment.yml')
 ```
+
 ]
 ]
 
@@ -267,14 +210,9 @@ Here we can tell the workflow to skip (like [skip travis]) when the message cont
 
 This can be helpful when there are multiple workflow being triggered on the same action, and you want to control which platform should actually be run. 
 
-```yml
-on: [push, pull_request]
+```{r,echo=FALSE}
+print_yml('resources/snippets/commit_messages.yml')
 
-jobs:
-  check:
-    runs-on: ${{ matrix.config.os }}
-    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
-    if: "!contains(github.event.head_commit.message, 'skip winos')"
 ```
 
 ---
@@ -297,92 +235,40 @@ Here is a list of [common R workflows](https://github.com/r-lib/actions/tree/mas
 .panel[.panel-name[magick]
 .pull-left[
 linux
-```yml
-jobs:
- steps:
-  - name: Install magick libs
-    run: |
-      sudo apt-get -qq update
-      sudo apt-get -y install libmagick++-dev
-      sudo ldconfig /usr/local/lib
+```{r,echo=FALSE}
+print_yml('resources/snippets/magick_linux.yml')
 ```
 ]
 
 .pull-right[
 osx
-```yml
-jobs:
- steps:
-  - name: Install XQuartz on macOS
-    if: runner.os == 'macOS'
-    run: brew cask install xquartz 
-  - name: Install magick
-    run: brew install imagemagick
+```{r,echo=FALSE}
+print_yml('resources/snippets/magick_osx.yml')
 ```
 ]
 ]
 .panel[.panel-name[tinytex]
 .pull-left[
 linux
-```yml
-jobs:
- steps:
- - name: Install texlibs
-        run: |
-          sudo apt-get -qq update
-          sudo apt-get install -y texlive-base texlive-latex-base texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra
-          tlmgr install standalone xcolor booktabs multirow amsmath listings setspace caption graphics tools psnfss varwidth colortbl epstopdf-pkg pgf
-
+```{r,echo=FALSE}
+print_yml('resources/snippets/tinytex_linux.yml')
 ```
 ]
 .pull-right[
 winOS
-```yml
-jobs:
- steps:
-  - name: install tinytex
-    run: |
-      install.packages('tinytex')
-      tinytex::install_tinytex()
-      tinytex::tlmgr_install(c('standalone', 'xcolor', 'booktabs', 'multirow', 'amsmath', 'listings', 'setspace', 'caption', 'graphics', 'tools', 'psnfss', 'varwidth', 'colortbl', 'epstopdf-pkg', 'pgf'))
-      cat("::add-path::", tinytex::tinytex_root(), "\\bin\\win32", sep = "")
-    shell: Rscript {0}
-  - run: tlmgr --version
-  - run: pdflatex --version
+```{r,echo=FALSE}
+print_yml('resources/snippets/tinytex_winos.yml')
 ```
 ]
 ]
 .panel[.panel-name[Interacting Via API]
-```yml
-jobs:
- steps:
-  - name: Update commit status
-    if: env.fork == 'false' # only run on non-fork repos
-    run: | # post an api call to github with json data using data from build
-      curl --request POST \
-      --url https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.event.pull_request.head.sha }} \
-      --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
-      --header 'Accept: application/vnd.github.antiope-preview+json' \
-      --header 'content-type: application/json' \
-      --data '{
-        "state": "success",
-        "target_url": "${{ env.DEPLOY_URL }}",
-        "context": "Netlify"
-        }'
+```{r,echo=FALSE}
+print_yml('resources/snippets/gh_api.yml')
 ```
 ]
 .panel[.panel-name[covrpage]
-```yml
-- name: covrpage
-        if: github.ref == 'refs/heads/master'
-        run: |
-          git config --local user.email "actions@github.com"
-          git config --local user.name "GitHub Actions"
-          Rscript -e 'remotes::install_github("hadley/emo")' \
-                  -e 'remotes::install_github("yonicd/covrpage@actions")' \
-                  -e 'covrpage::covrpage_ci()'
-          git commit tests/README.md -m 'Update tests/README.Rmd' || echo "No changes to commit"
-          git push https://${{github.actor}}:${{secrets.GITHUB_TOKEN}}@github.com/${{github.repository}}.git HEAD:${{ github.ref }} || echo "No changes to commit"
+```{r,echo=FALSE}
+print_yml('resources/snippets/covrpage.yml')
 ```
 ]
 ]
@@ -396,18 +282,9 @@ GitHub actions do have a few weak points that you should know that is different 
 - Cron jobs only work on main branch
 - You can't blow away your cache (bump the version of the restore-keys) 
 
-```yml
-jobs:
-  R-CMD-check:
-    - name: Cache R packages
-        if: runner.os != 'Windows'
-        uses: actions/cache@v2
-        with:
-          path: ${{ env.R_LIBS_USER }}
-          key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-${{ hashFiles('.github/depends.Rds') }}
-          restore-keys: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-
+```{r,echo=FALSE}
+print_yml('resources/snippets/cache.yml')
 ```
-
 
 ---
 # Leveling Up
@@ -430,19 +307,8 @@ We will touch on a few useful ones I have used
 
 # Debugging with tmate
 .pull-left[
-```yml
-name: CI
-on: [push]
-jobs:
-  check:
-    runs-on: macOS-latest
-    if: "!contains(github.event.head_commit.message, 'gha ssh')"
-  build:
-    runs-on: macOS-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v2
+```{r,echo=FALSE}
+print_yml('resources/snippets/tmate.yml')
 ```
 ]
 
@@ -451,23 +317,22 @@ jobs:
 ]
 
 ---
+
+# Deploying to Another Branch
+
+```{r,echo=FALSE}
+print_yml('resources/snippets/deploy.yml')
+```
+
+---
 # Repository Dispatch
 
 Using Repository Dispatch we can start to connect GitHub Repository action workflows
 .pull-left[
 [Parent Workflow](https://github.com/yonicd/slackteams/blob/master/.github/workflows/R-mac.yml#L75)
 
-```yml
-jobs:
-  steps:
-    - name: slackthreads trigger
-        uses: peter-evans/repository-dispatch@v1.0.0
-        with:
-          token: ${{secrets.GH_PAT}}
-          repository: yonicd/slackthreads
-          event-type: push
-          client-payload: '{"repository": "${{ github.repository }}", "ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
-
+```{r,echo=FALSE}
+print_yml('resources/snippets/dispatch_parent.yml')
 ```
 ]
 
@@ -488,22 +353,8 @@ on:
 
 If the child workflow fails it will use the information it got from the parent to open an issue referencing the offending github commit hash.
 
-```yml
-jobs:
-  steps:
-    - name: Clap Back
-        if: failure()
-        run: |
-          curl --request POST \
-          --url https://api.github.com/repos/${{github.repository}}/issues \
-          --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
-          --header 'Accept: application/vnd.github.antiope-preview+json' \
-          --header 'content-type: application/json' \
-          --data '{
-            "title": "Revdep Fail: ${{ github.repository }}",
-            "body": "The Reverse Dependency ${{ github.repository }} of ${{ github.event.client_payload.repository }} has broken due to the commit ${{ github.event.client_payload.sha }}",
-            "label" : ["revdep breaking"]
-            }'
+```{r,echo=FALSE}
+print_yml('resources/snippets/clapback.yml')
 ```
 
 ---
@@ -515,16 +366,8 @@ Adding a line to install the hash for the parent repository before all the other
 
 If it fails then clapback is invoked to let the developer know something is wrong.
 
-```yml
-jobs:
-  check:
-    - name: Run Check
-        run: |
-            Rscript -e "install.packages('remotes')" \
-                    -e "remotes::install_github('${{ github.event.client_payload.repository }}@${{ github.event.client_payload.sha }}', force = TRUE)" \
-                    -e  "remotes::install_deps(dependencies = TRUE)" \
-                    -e "remotes::install_cran('rcmdcheck')" \
-                    -e "rcmdcheck::rcmdcheck(args = '${{ matrix.config.args }}', error_on = 'warning', check_dir = 'check')"
+```{r,echo=FALSE}
+print_yml('resources/snippets/revdep.yml')
 ```
 
 ---
@@ -580,17 +423,8 @@ create_map('DESCRIPTION')
 ]
 .panel[.panel-name[GHA]
 
-```yml
-jobs:
-  check:
-    - name: Install dependencies
-      run: |
-        install.packages('remotes')
-        remotes::install_github('yonicd/shield')
-        shield::install_remotes(shield::create_map())
-        remotes::install_local(force = TRUE, upgrade = TRUE)
-        remotes::install_cran('rcmdcheck')
-      shell: Rscript {0}
+```{r,echo=FALSE}
+print_yml('resources/snippets/shield.yml')
 ```
 ]
 

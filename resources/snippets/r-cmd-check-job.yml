@@ -1,0 +1,16 @@
+jobs:
+  R-CMD-check:
+    runs-on: macOS-latest #machine to run on
+    steps:
+      - uses: actions/checkout@v2 # external resource (GitHub Repo)
+      - uses: r-lib/actions/setup-r@v1 # external resource
+      - name: Install dependencies # name of the step
+        run: | # What to run (R code to install packages)
+          install.packages(c("remotes", "rcmdcheck"))
+          remotes::install_deps(dependencies = TRUE)
+        # This tells the machine to run the lines with RScript
+        shell: Rscript {0}
+      - name: Check # Run R CMD check
+        run: |
+          rcmdcheck::rcmdcheck(args = "--no-manual",error_on = "error")
+        shell: Rscript {0}

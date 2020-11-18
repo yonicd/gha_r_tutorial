@@ -1,0 +1,16 @@
+jobs:
+  R-CMD-check:
+    strategy:
+# fail-fast: When set to true, GitHub cancels all in-progress jobs 
+# if any matrix job fails. Default: true
+      fail-fast: false
+      matrix:
+        config:
+          - {os: windows-latest, r: 'release'}
+          - {os: macOS-latest,   r: 'release'}
+          - {os: ubuntu-20.04,   r: 'release'}
+          - {os: ubuntu-20.04,   r: 'devel'}
+          
+    runs-on: ${{ matrix.config.os }}
+
+    name: ${{ matrix.config.os }} (${{ matrix.config.r }})

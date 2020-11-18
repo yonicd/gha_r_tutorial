@@ -1,0 +1,15 @@
+jobs:
+ steps:
+  - name: Update commit status
+    if: env.fork == 'false' # only run on non-fork repos
+    run: | # post an api call to github with json data using data from build
+      curl --request POST \
+      --url https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.event.pull_request.head.sha }} \
+      --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+      --header 'Accept: application/vnd.github.antiope-preview+json' \
+      --header 'content-type: application/json' \
+      --data '{
+        "state": "success",
+        "target_url": "${{ env.DEPLOY_URL }}",
+        "context": "Netlify"
+        }'

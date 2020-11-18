@@ -1,0 +1,11 @@
+jobs:
+ steps:
+  - name: install tinytex
+    run: |
+      install.packages('tinytex')
+      tinytex::install_tinytex()
+      tinytex::tlmgr_install(c('standalone', 'xcolor', 'booktabs', 'multirow', 'amsmath', 'listings', 'setspace', 'caption', 'graphics', 'tools', 'psnfss', 'varwidth', 'colortbl', 'epstopdf-pkg', 'pgf'))
+      cat("::add-path::", tinytex::tinytex_root(), "\\bin\\win32", sep = "")
+    shell: Rscript {0}
+  - run: tlmgr --version
+  - run: pdflatex --version

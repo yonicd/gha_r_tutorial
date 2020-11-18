@@ -1,0 +1,15 @@
+jobs:
+  deploy:
+      - name: Commit files
+        run: |
+          Rscript -e "fs::dir_tree()"
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m "Build Slides" -a        
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GH_PAT }}
+          branch: pages 
+          force: true

@@ -1,0 +1,10 @@
+jobs:
+  check:
+    - name: Install dependencies
+      run: |
+        install.packages('remotes')
+        remotes::install_github('yonicd/shield')
+        shield::install_remotes(shield::create_map())
+        remotes::install_local(force = TRUE, upgrade = TRUE)
+        remotes::install_cran('rcmdcheck')
+      shell: Rscript {0}
