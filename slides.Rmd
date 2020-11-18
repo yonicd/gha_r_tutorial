@@ -297,11 +297,12 @@ Here is the link to it: https://github.com/marketplace?type=actions
 
 We will touch on a few useful ones I have used
 
-  - [Debugging with tmate](https://github.com/marketplace/actions/debugging-with-tmate): This GitHub Action offers you a direct way to interact with the host system on which the actual scripts (Actions) will run.
-   - SSH into an active workflow for advanced debugging
+  - [Debugging with tmate](https://github.com/marketplace/actions/debugging-with-tmate): SSH into an active workflow for advanced debugging
 
-  - [Repository Dispatch](https://github.com/marketplace/actions/repository-dispatch): A GitHub action to create a repository dispatch event. 
-   - A repository dispatch event lets you create your own events to trigger builds in other repositories.
+  - [Repository Dispatch](https://github.com/marketplace/actions/repository-dispatch): A repository dispatch event lets you create your own events to trigger builds in other repositories.
+  
+  - [github-push-action](https://github.com/marketplace/actions/repository-dispatch): Push to another branch in the repository
+
 
 ---
 
