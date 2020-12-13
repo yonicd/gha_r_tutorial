@@ -4,13 +4,14 @@
     <title>GitHub Actions</title>
     <meta charset="utf-8" />
     <meta name="author" content="Jonathan Sidi" />
-    <meta name="date" content="2020-11-17" />
+    <meta name="date" content="2020-12-13" />
     <script src="libs/header-attrs/header-attrs.js"></script>
     <link href="libs/anchor-sections/anchor-sections.css" rel="stylesheet" />
     <script src="libs/anchor-sections/anchor-sections.js"></script>
     <link href="libs/panelset/panelset.css" rel="stylesheet" />
     <script src="libs/panelset/panelset.js"></script>
-    <link rel="stylesheet" href="resources/css/xaringan-themer.css" type="text/css" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+    <link rel="stylesheet" href="resources/css/code-wrap.css" type="text/css" />
   </head>
   <body>
     <textarea id="source">
@@ -18,7 +19,7 @@ class: center, middle, inverse, title-slide
 
 # GitHub Actions
 ### Jonathan Sidi
-### 2020-11-17
+### 2020-12-13
 
 ---
 
@@ -30,21 +31,6 @@ class: center, middle, inverse, title-slide
 
 
 
-
-&lt;style type="text/css"&gt;
-pre {
-  background: #FFBB33;
-  max-width: 100%;
-  max-height: 350px;
-  overflow-x: auto;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  white-space: -moz-pre-wrap;
-  white-space: -pre-wrap;
-  white-space: -o-pre-wrap;
-  word-wrap: break-word;
-}
-&lt;/style&gt;
 
 # What are GitHub Actions?
 
@@ -428,7 +414,7 @@ We will touch on a few useful ones I have used
 
 ---
 
-# Debugging with tmate
+### Debugging with tmate
 .pull-left[
 ```yml
 name: CI
@@ -452,7 +438,7 @@ jobs:
 
 ---
 
-# Deploying to Another Branch
+### Deploying to Another Branch
 
 ```yml
 jobs:
@@ -473,7 +459,7 @@ jobs:
 ```
 
 ---
-# Repository Dispatch
+### Repository Dispatch
 
 Using Repository Dispatch we can start to connect GitHub Repository action workflows
 .pull-left[
@@ -505,7 +491,7 @@ on:
 ]
 
 ---
-# Clapping Back
+### Clapping Back
 
 If the child workflow fails it will use the information it got from the parent to open an issue referencing the offending github commit hash.
 
@@ -528,7 +514,7 @@ jobs:
 ```
 
 ---
-# Revdep Workflow
+### Revdep Workflow
 
 Combining Repository Dispatch with Clapping Back you can create a Revdep workflow. For an example workflow you can see in [yonicd/slackteams](https://github.com/yonicd/slackteams/blob/master/.github/workflows/R-mac-revdep.yml).
 

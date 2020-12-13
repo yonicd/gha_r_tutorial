@@ -34,7 +34,7 @@ jobs:
           key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-${{ hashFiles('.github/depends.Rds') }}
           restore-keys: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-
       - name: Build
-        run: rmarkdown::render('slides.Rmd', 'xaringan::moon_reader',output_file = 'index.html')
+        run: rmarkdown::render('index.Rmd', 'xaringan::moon_reader',output_file = 'index.html')
         shell: Rscript {0}
       - name: Commit files
         run: |
